@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	baseURL             = "https://www.gogozq.cc"
+	baseURL             = "https://www.kanqiulei.cc" // 更新了基础域名
 	playlistFile        = "playlist.m3u"
 	liveLinksFile       = "live_links.txt"
 	logFile             = "scraper_log.txt"
@@ -38,7 +38,6 @@ const (
 	maxDetailConcurrent = 6
 )
 
-// 👇 豪华版全称转简称字典（已精准区分澳洲NBL与中国NBL）
 var leagueShortNames = map[string]string{
 	// ================= [足球 - 欧洲五大联赛及杯赛] =================
 	"英格兰超级联赛":     "英超",
@@ -180,7 +179,7 @@ var leagueShortNames = map[string]string{
 	"CBA中国篮球职业联赛":   "CBA",
 	"CBA中国篮球俱乐部杯":   "CBA俱乐部杯",
 	"WCBA中国女子篮球职业联赛": "WCBA",
-	"中国全国篮球联赛":     "中国NBL", // 👈 这里增加了国内的 NBL
+	"中国全国篮球联赛":     "中国NBL",
 	
 	"中华台北篮球P联盟职业联赛": "PLG",
 	"中华台北篮球职业大联盟":  "T1联赛",
@@ -206,7 +205,7 @@ var leagueShortNames = map[string]string{
 	"韩国女子篮球联赛":   "WKBL",
 	"菲律宾篮球PBA委员杯": "PBA",
 	"菲律宾篮球马哈里卡联赛": "MPBL",
-	"澳大利亚国家篮球联赛": "澳洲NBL", // 👈 这里明确了澳洲的 NBL
+	"澳大利亚国家篮球联赛": "澳洲NBL",
 	"东亚篮球超级联赛":   "东亚超",
 
 	"阿根廷全国篮球联赛":     "阿篮甲",
@@ -356,7 +355,8 @@ func runScrape(ctx context.Context) error {
 
 	allItems, existingURLs, existingTitles := loadExistingItems(loc, now, retentionCutoff)
 
-	listURLs := []string{baseURL + "/category/zuqiu", baseURL + "/category/lanqiu"}
+	// 👉 首页即默认的足球列表，篮球为 /lanqiu.html
+	listURLs := []string{baseURL + "/", baseURL + "/lanqiu.html"}
 	listBodies := fetchURLs(ctx, listURLs, listFetchTimeout, 2, listFetchRetries, listRetryWait, true)
 
 	candidates := make([]matchCandidate, 0, 64)
@@ -562,6 +562,7 @@ func fetchURLs(
 				}
 				req.Header.Set("User-Agent", "Mozilla/5.0")
 				req.Header.Set("Accept-Encoding", "gzip")
+				req.Header.Set("Referer", baseURL+"/") // 👉 增加防盗链规避
 
 				resp, err := client.Do(req)
 				if err == nil {
@@ -620,26 +621,40 @@ func shortenLeagueName(name string) (string, bool) {
 }
 
 func parseListCandidates(html string, winStart, now time.Time, loc *time.Location) []matchCandidate {
-	tagRe := regexp.MustCompile(`(?is)<a[^>]*class="clearfix\s*"[^>]*>.*?</a>`)
-	timeRe := regexp.MustCompile(`(\d{2}:\d{2})`)
-	dateRe := regexp.MustCompile(`data-time="([^"]+)"`)
-	hrefRe := regexp.MustCompile(`href="([^"]+)"`)
-	homeRe := regexp.MustCompile(`(?is)class=["']team\s+zhudui[^"']*["'].*?<p>\s*([^<]+?)\s*</p>`)
-	awayRe := regexp.MustCompile(`(?is)class=["']team\s+kedui[^"']*["'].*?<p>\s*([^<]+?)\s*</p>`)
-	leagueRe := regexp.MustCompile(`(?is)eventtime[^>]*>.*?<em>\s*([^<]+?)\s*</em>`)
+	tagRe := regexp.MustCompile(`(?is)<div class="panel">.*?<span class="title">[^<]*</span>`)
+	timeRe := regexp.MustCompile(`(?is)<span class="time">\s*(\d{2}-\d{2})\s+(\d{2}:\d{2})\s*</span>`)
+	hrefRe := regexp.MustCompile(`(?is)href="(/eventInfo/\d+\.html)"`)
+	homeRe := regexp.MustCompile(`(?is)<span class="home">.*?<span class="name">([^<]+)</span>`)
+	awayRe := regexp.MustCompile(`(?is)<span class="away[^>]*>.*?<span class="name">([^<]+)</span>`)
+	leagueRe := regexp.MustCompile(`(?is)<span class="title">([^<]+)</span>`)
 
 	cands := make([]matchCandidate, 0, 64)
 	for _, tag := range tagRe.FindAllString(html, -1) {
-		dm := dateRe.FindStringSubmatch(tag)
-		tm := timeRe.FindStringSubmatch(tag)
 		hm := hrefRe.FindStringSubmatch(tag)
-		if len(dm) != 2 || len(tm) != 2 || len(hm) != 2 {
+		tm := timeRe.FindStringSubmatch(tag)
+		if len(hm) != 2 || len(tm) != 3 {
 			continue
 		}
-		ts, err := time.ParseInLocation("2006-01-02 15:04:05", dm[1]+" "+tm[1]+":00", loc)
+
+		dateStr := tm[1] // 例如 "06-09"
+		timeStr := tm[2] // 例如 "23:30"
+		year := now.Year()
+		fullTimeStr := fmt.Sprintf("%d-%s %s:00", year, dateStr, timeStr)
+		ts, err := time.ParseInLocation("2006-01-02 15:04:05", fullTimeStr, loc)
+		
+		// 跨年边界处理 (例如 12 月抓到了 1 月的比赛)
+		if err == nil {
+			if ts.After(now.Add(30 * 24 * time.Hour)) {
+				ts = ts.AddDate(-1, 0, 0)
+			} else if ts.Before(now.Add(-30 * 24 * time.Hour)) {
+				ts = ts.AddDate(1, 0, 0)
+			}
+		}
+
 		if err != nil || ts.Before(winStart) || ts.After(now) {
 			continue
 		}
+
 		home := "未知主队"
 		away := "未知客队"
 		league := "未知联赛"
@@ -654,9 +669,10 @@ func parseListCandidates(html string, winStart, now time.Time, loc *time.Locatio
 			league = strings.TrimSpace(m[1])
 		}
 
-		home = strings.ReplaceAll(strings.Join(strings.Fields(home), ""), "&nbsp;", "")
-		away = strings.ReplaceAll(strings.Join(strings.Fields(away), ""), "&nbsp;", "")
-		league = strings.ReplaceAll(strings.Join(strings.Fields(league), ""), "&nbsp;", "")
+		// 清理无用空格与 HTML 实体
+		home = strings.ReplaceAll(home, "&nbsp;", "")
+		away = strings.ReplaceAll(away, "&nbsp;", "")
+		league = strings.ReplaceAll(league, "&nbsp;", "")
 
 		league, isHit := shortenLeagueName(league)
 
@@ -668,18 +684,18 @@ func parseListCandidates(html string, winStart, now time.Time, loc *time.Locatio
 			title = fmt.Sprintf("%svs%s", home, away)
 		}
 
-		cands = append(cands, matchCandidate{Title: title, URL: hm[1], Time: tm[1], Timestamp: ts})
+		cands = append(cands, matchCandidate{Title: title, URL: hm[1], Time: timeStr, Timestamp: ts})
 	}
 	return cands
 }
 
 func extractM3U8(html string) string {
-	re := regexp.MustCompile(`src:\s*["']([^"']+\.m3u8[^"']*)["']`)
+	re := regexp.MustCompile(`(?i)src=["']\s*([^"']+\.m3u8[^"']*)\s*["']`)
 	m := re.FindStringSubmatch(html)
 	if len(m) != 2 {
 		return ""
 	}
-	return m[1]
+	return strings.TrimSpace(m[1])
 }
 
 func normalizeStreamURL(raw string) string {
