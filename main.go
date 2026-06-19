@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	baseURL             = "https://www.kanqiulei.cc" // 更新了基础域名
+	baseURL             = "https://www.gogozq.cc"
 	playlistFile        = "playlist.m3u"
 	liveLinksFile       = "live_links.txt"
 	logFile             = "scraper_log.txt"
@@ -38,61 +38,62 @@ const (
 	maxDetailConcurrent = 6
 )
 
+// 👇 豪华版全称转简称字典（已精准区分澳洲NBL与中国NBL）
 var leagueShortNames = map[string]string{
 	// ================= [足球 - 欧洲五大联赛及杯赛] =================
-	"英格兰超级联赛":     "英超",
-	"英格兰冠军联赛":     "英冠",
-	"英格兰甲组联赛":     "英甲",
-	"英格兰乙组联赛":     "英乙",
+	"英格兰超级联赛":         "英超",
+	"英格兰冠军联赛":         "英冠",
+	"英格兰甲组联赛":         "英甲",
+	"英格兰乙组联赛":         "英乙",
 	"英格兰足球协会全国联赛": "英议联",
-	"英格兰足总杯":      "足总杯",
-	"英格兰联赛杯":      "英联杯",
+	"英格兰足总杯":          "足总杯",
+	"英格兰联赛杯":          "英联杯",
 
 	"西班牙甲组联赛": "西甲",
 	"西班牙乙组联赛": "西乙",
-	"西班牙国王杯":  "国王杯",
-	"西班牙超级杯":  "西超杯",
+	"西班牙国王杯":   "国王杯",
+	"西班牙超级杯":   "西超杯",
 
 	"意大利甲组联赛": "意甲",
 	"意大利乙组联赛": "意乙",
 	"意大利丙组联赛": "意丙",
-	"意大利杯":    "意杯",
-	"意大利超级杯":  "意超杯",
+	"意大利杯":     "意杯",
+	"意大利超级杯":   "意超杯",
 
 	"德国甲组联赛": "德甲",
 	"德国乙组联赛": "德乙",
 	"德国丙组联赛": "德丙",
-	"德国杯":    "德国杯",
-	"德国超级杯":  "德超杯",
+	"德国杯":     "德国杯",
+	"德国超级杯":   "德超杯",
 
-	"法国甲组联赛":   "法甲",
-	"法国乙组联赛":   "法乙",
+	"法国甲组联赛":     "法甲",
+	"法国乙组联赛":     "法乙",
 	"法国丙组全国联赛": "法丙",
-	"法国杯":      "法国杯",
-	"法国超级杯":    "法超杯",
+	"法国杯":          "法国杯",
+	"法国超级杯":        "法超杯",
 
 	// ================= [足球 - 欧洲洲际赛 & 欧洲其他主流] =================
 	"欧洲冠军联赛": "欧冠",
 	"欧足联欧洲联赛": "欧联",
-	"欧洲联赛":   "欧联",
+	"欧洲联赛":     "欧联",
 	"欧洲协会联赛": "欧协联",
-	"欧洲超级杯":  "欧洲超级杯",
+	"欧洲超级杯":   "欧洲超级杯",
 	"欧洲国家联赛": "欧国联",
 	"欧洲青年联赛": "欧青联",
 
 	"葡萄牙超级联赛": "葡超",
 	"葡萄牙甲组联赛": "葡甲",
-	"葡萄牙杯":    "葡萄牙杯",
-	"荷兰甲组联赛":  "荷甲",
-	"荷兰乙组联赛":  "荷乙",
+	"葡萄牙杯":     "葡萄牙杯",
+	"荷兰甲组联赛":   "荷甲",
+	"荷兰乙组联赛":   "荷乙",
 	"苏格兰超级联赛": "苏超",
 	"俄罗斯超级联赛": "俄超",
 	"土耳其超级联赛": "土超",
 	"比利时甲组联赛A": "比甲",
-	"瑞士超级联赛":  "瑞士超",
-	"瑞典超级联赛":  "瑞典超",
-	"挪威超级联赛":  "挪超",
-	"丹麦超级联赛":  "丹超",
+	"瑞士超级联赛":   "瑞士超",
+	"瑞典超级联赛":   "瑞典超",
+	"挪威超级联赛":   "挪超",
+	"丹麦超级联赛":   "丹超",
 	"奥地利甲组联赛": "奥甲",
 	"希腊超级联赛甲组": "希超",
 	"乌克兰超级联赛": "乌超",
@@ -101,119 +102,118 @@ var leagueShortNames = map[string]string{
 	"中国超级联赛": "中超",
 	"中国甲组联赛": "中甲",
 	"中国乙组联赛": "中乙",
-	"中国足协杯":  "足协杯",
-	"中国全运会":  "全运会",
+	"中国足协杯":   "足协杯",
+	"中国全运会":   "全运会",
 	"香港超级联赛": "港超",
 
 	"日本J1联赛": "日职联",
 	"日本J2联赛": "日职乙",
 	"日本J3联赛": "日丙",
-	"日本天皇杯":  "天皇杯",
-	"日本联赛杯":  "日联杯",
+	"日本天皇杯":   "天皇杯",
+	"日本联赛杯":   "日联杯",
 
 	"韩国K甲组联赛": "韩K联",
 	"韩国K乙组联赛": "韩K2",
 	"韩国足总杯":   "韩足总杯",
 
 	"澳大利亚甲组联赛": "澳超",
-	"澳大利亚足总杯":  "澳足总杯",
+	"澳大利亚足总杯":   "澳足总杯",
 
-	"沙特超级联赛":  "沙特超",
-	"伊朗超级联赛":  "伊朗超",
+	"沙特超级联赛":   "沙特超",
+	"伊朗超级联赛":   "伊朗超",
 	"阿联酋超级联赛": "阿联酋超",
 	"卡塔尔甲组联赛": "卡塔尔联",
 
 	"亚足联冠军精英联赛": "亚冠精英",
-	"亚足联冠军联赛二":  "亚冠2",
-	"亚足联挑战联赛":   "亚挑联",
+	"亚足联冠军联赛二":   "亚冠2",
+	"亚足联挑战联赛":     "亚挑联",
 	"大洋洲足联职业联赛": "大洋联",
 
 	// ================= [足球 - 美洲] =================
-	"美国职业大联盟":  "美职联",
+	"美国职业大联盟":   "美职联",
 	"美国公开赛冠军杯": "美公开杯",
 
 	"巴西甲组联赛": "巴甲",
 	"巴西乙组联赛": "巴乙",
 	"巴西丙组联赛": "巴丙",
-	"巴西杯":    "巴西杯",
+	"巴西杯":     "巴西杯",
 
-	"阿根廷职业联赛":     "阿甲",
+	"阿根廷职业联赛":           "阿甲",
 	"阿根廷乙组曼特波里頓联赛": "阿乙",
-	"阿根廷杯":        "阿根廷杯",
-	"阿根廷职业联赛杯":    "阿联杯",
+	"阿根廷杯":              "阿根廷杯",
+	"阿根廷职业联赛杯":        "阿联杯",
 
-	"墨西哥超级联赛":  "墨超",
+	"墨西哥超级联赛":   "墨超",
 	"哥伦比亚甲组联赛": "哥甲",
-	"智利甲组联赛":   "智甲",
-	"秘鲁甲组联赛":   "秘鲁甲",
+	"智利甲组联赛":     "智甲",
+	"秘鲁甲组联赛":     "秘鲁甲",
 
-	"南美自由杯":       "解放者杯",
-	"南美洲球会杯":      "南美杯",
-	"南美超级杯":       "南美优胜者杯",
+	"南美自由杯":               "解放者杯",
+	"南美洲球会杯":             "南美杯",
+	"南美超级杯":               "南美优胜者杯",
 	"中北美洲及加勒比海冠军杯": "美冠杯",
 
 	// ================= [足球 - 女足 & 国家队 & 友谊赛] =================
 	"英格兰女子超级联赛": "英女超",
 	"西班牙女子甲组联赛": "西女甲",
 	"意大利女子甲组联赛": "意女甲",
-	"德国女子甲组联赛":  "德女甲",
-	"法国女子超级联赛":  "法女超",
-	"欧洲女子冠军联赛":  "女足欧冠",
+	"德国女子甲组联赛":   "德女甲",
+	"法国女子超级联赛":   "法女超",
+	"欧洲女子冠军联赛":   "女足欧冠",
 
-	"国际友谊赛":             "友谊赛",
-	"俱乐部友谊赛":            "球会友谊",
-	"女子国际友谊赛":           "女足友谊",
-	"2026世界杯亚洲外围赛":      "世亚预",
-	"2026世界杯欧洲外围赛":      "世欧预",
-	"2026世界杯南美洲外围赛":     "世南美预",
+	"国际友谊赛":                         "友谊赛",
+	"俱乐部友谊赛":                       "球会友谊",
+	"女子国际友谊赛":                     "女足友谊",
+	"2026世界杯亚洲外围赛":                "世亚预",
+	"2026世界杯欧洲外围赛":                "世欧预",
+	"2026世界杯南美洲外围赛":              "世南美预",
 	"2026世界杯中北美洲及加勒比海外围赛": "世北美预",
-	"2026世界杯非洲外围赛":      "世非预",
+	"2026世界杯非洲外围赛":                "世非预",
 
 	// ================= [篮球 - 豪华大满贯] =================
-	"NBA美国篮球职业联赛":   "NBA",
+	"NBA美国篮球职业联赛":    "NBA",
 	"NBA美国篮球职业联赛杯":  "NBA季中赛",
 	"NBA美国篮球职业全明星赛": "NBA全明星",
-	"女子美国职业篮球联赛":   "WNBA",
-	"美国大学篮球联赛":     "NCAA",
+	"女子美国职业篮球联赛":    "WNBA",
+	"美国大学篮球联赛":       "NCAA",
 
-	"CBA中国篮球职业联赛":   "CBA",
-	"CBA中国篮球俱乐部杯":   "CBA俱乐部杯",
+	"CBA中国篮球职业联赛":     "CBA",
+	"CBA中国篮球俱乐部杯":     "CBA俱乐部杯",
 	"WCBA中国女子篮球职业联赛": "WCBA",
-	"中国全国篮球联赛":     "中国NBL",
-	
+	"中国全国篮球联赛":       "中国NBL", // 👈 这里增加了国内的 NBL
 	"中华台北篮球P联盟职业联赛": "PLG",
-	"中华台北篮球职业大联盟":  "T1联赛",
-	"中华台北篮球超级联赛":   "SBL",
+	"中华台北篮球职业大联盟":   "T1联赛",
+	"中华台北篮球超级联赛":     "SBL",
 
-	"欧洲篮球冠军联赛":     "欧篮联",
-	"FIBA欧洲篮球杯":    "欧篮杯",
+	"欧洲篮球冠军联赛":           "欧篮联",
+	"FIBA欧洲篮球杯":            "欧篮杯",
 	"欧洲亚得里亚海篮球甲组联赛": "亚海联",
-	"VTB篮球联合赛":     "VTB杯",
+	"VTB篮球联合赛":             "VTB杯",
 
 	"西班牙篮球甲组联赛": "西篮甲",
-	"西班牙篮球国王杯":  "西国王杯",
+	"西班牙篮球国王杯":   "西国王杯",
 	"意大利篮球甲组联赛": "意篮甲",
-	"法国篮球甲组联赛":  "法篮甲",
-	"德国篮球甲组联赛":  "德篮甲",
+	"法国篮球甲组联赛":   "法篮甲",
+	"德国篮球甲组联赛":   "德篮甲",
 	"土耳其篮球超级联赛": "土篮超",
-	"希腊篮球甲组联赛":  "希篮甲",
+	"希腊篮球甲组联赛":   "希篮甲",
 	"俄罗斯篮球超级联赛": "俄篮超",
 
-	"日本篮球B1联赛":   "日篮B1",
-	"日本篮球B2联赛":   "日篮B2",
-	"韩国篮球联赛":     "KBL",
+	"日本篮球B1联赛":     "日篮B1",
+	"日本篮球B2联赛":     "日篮B2",
+	"韩国篮球联赛":       "KBL",
 	"韩国女子篮球联赛":   "WKBL",
 	"菲律宾篮球PBA委员杯": "PBA",
 	"菲律宾篮球马哈里卡联赛": "MPBL",
-	"澳大利亚国家篮球联赛": "澳洲NBL",
+	"澳大利亚国家篮球联赛": "澳洲NBL", // 👈 这里明确了澳洲的 NBL
 	"东亚篮球超级联赛":   "东亚超",
 
-	"阿根廷全国篮球联赛":     "阿篮甲",
-	"巴西篮球联赛":       "巴篮甲",
+	"阿根廷全国篮球联赛":         "阿篮甲",
+	"巴西篮球联赛":               "巴篮甲",
 	"FIBA篮球世界杯欧洲资格赛": "世预赛欧洲区",
 	"FIBA篮球世界杯亚洲资格赛": "世预赛亚洲区",
 	"FIBA篮球世界杯美洲预选赛": "世预赛美洲区",
-	"篮球国际友谊赛":      "篮球友谊",
+	"篮球国际友谊赛":           "篮球友谊",
 }
 
 var (
@@ -355,8 +355,7 @@ func runScrape(ctx context.Context) error {
 
 	allItems, existingURLs, existingTitles := loadExistingItems(loc, now, retentionCutoff)
 
-	// 👉 首页即默认的足球列表，篮球为 /lanqiu.html
-	listURLs := []string{baseURL + "/", baseURL + "/lanqiu.html"}
+	listURLs := []string{baseURL + "/category/zuqiu", baseURL + "/category/lanqiu"}
 	listBodies := fetchURLs(ctx, listURLs, listFetchTimeout, 2, listFetchRetries, listRetryWait, true)
 
 	candidates := make([]matchCandidate, 0, 64)
@@ -562,7 +561,6 @@ func fetchURLs(
 				}
 				req.Header.Set("User-Agent", "Mozilla/5.0")
 				req.Header.Set("Accept-Encoding", "gzip")
-				req.Header.Set("Referer", baseURL+"/") // 👉 增加防盗链规避
 
 				resp, err := client.Do(req)
 				if err == nil {
@@ -621,40 +619,26 @@ func shortenLeagueName(name string) (string, bool) {
 }
 
 func parseListCandidates(html string, winStart, now time.Time, loc *time.Location) []matchCandidate {
-	tagRe := regexp.MustCompile(`(?is)<div class="panel">.*?<span class="title">[^<]*</span>`)
-	timeRe := regexp.MustCompile(`(?is)<span class="time">\s*(\d{2}-\d{2})\s+(\d{2}:\d{2})\s*</span>`)
-	hrefRe := regexp.MustCompile(`(?is)href="(/eventInfo/\d+\.html)"`)
-	homeRe := regexp.MustCompile(`(?is)<span class="home">.*?<span class="name">([^<]+)</span>`)
-	awayRe := regexp.MustCompile(`(?is)<span class="away[^>]*>.*?<span class="name">([^<]+)</span>`)
-	leagueRe := regexp.MustCompile(`(?is)<span class="title">([^<]+)</span>`)
+	tagRe := regexp.MustCompile(`(?is)<a[^>]*class="clearfix\s*"[^>]*>.*?</a>`)
+	timeRe := regexp.MustCompile(`(\d{2}:\d{2})`)
+	dateRe := regexp.MustCompile(`data-time="([^"]+)"`)
+	hrefRe := regexp.MustCompile(`href="([^"]+)"`)
+	homeRe := regexp.MustCompile(`(?is)class=["']team\s+zhudui[^"']*["'].*?<p>\s*([^<]+?)\s*</p>`)
+	awayRe := regexp.MustCompile(`(?is)class=["']team\s+kedui[^"']*["'].*?<p>\s*([^<]+?)\s*</p>`)
+	leagueRe := regexp.MustCompile(`(?is)eventtime[^>]*>.*?<em>\s*([^<]+?)\s*</em>`)
 
 	cands := make([]matchCandidate, 0, 64)
 	for _, tag := range tagRe.FindAllString(html, -1) {
-		hm := hrefRe.FindStringSubmatch(tag)
+		dm := dateRe.FindStringSubmatch(tag)
 		tm := timeRe.FindStringSubmatch(tag)
-		if len(hm) != 2 || len(tm) != 3 {
+		hm := hrefRe.FindStringSubmatch(tag)
+		if len(dm) != 2 || len(tm) != 2 || len(hm) != 2 {
 			continue
 		}
-
-		dateStr := tm[1] // 例如 "06-09"
-		timeStr := tm[2] // 例如 "23:30"
-		year := now.Year()
-		fullTimeStr := fmt.Sprintf("%d-%s %s:00", year, dateStr, timeStr)
-		ts, err := time.ParseInLocation("2006-01-02 15:04:05", fullTimeStr, loc)
-		
-		// 跨年边界处理 (例如 12 月抓到了 1 月的比赛)
-		if err == nil {
-			if ts.After(now.Add(30 * 24 * time.Hour)) {
-				ts = ts.AddDate(-1, 0, 0)
-			} else if ts.Before(now.Add(-30 * 24 * time.Hour)) {
-				ts = ts.AddDate(1, 0, 0)
-			}
-		}
-
+		ts, err := time.ParseInLocation("2006-01-02 15:04:05", dm[1]+" "+tm[1]+":00", loc)
 		if err != nil || ts.Before(winStart) || ts.After(now) {
 			continue
 		}
-
 		home := "未知主队"
 		away := "未知客队"
 		league := "未知联赛"
@@ -669,10 +653,9 @@ func parseListCandidates(html string, winStart, now time.Time, loc *time.Locatio
 			league = strings.TrimSpace(m[1])
 		}
 
-		// 清理无用空格与 HTML 实体
-		home = strings.ReplaceAll(home, "&nbsp;", "")
-		away = strings.ReplaceAll(away, "&nbsp;", "")
-		league = strings.ReplaceAll(league, "&nbsp;", "")
+		home = strings.ReplaceAll(strings.Join(strings.Fields(home), ""), "&nbsp;", "")
+		away = strings.ReplaceAll(strings.Join(strings.Fields(away), ""), "&nbsp;", "")
+		league = strings.ReplaceAll(strings.Join(strings.Fields(league), ""), "&nbsp;", "")
 
 		league, isHit := shortenLeagueName(league)
 
@@ -684,18 +667,18 @@ func parseListCandidates(html string, winStart, now time.Time, loc *time.Locatio
 			title = fmt.Sprintf("%svs%s", home, away)
 		}
 
-		cands = append(cands, matchCandidate{Title: title, URL: hm[1], Time: timeStr, Timestamp: ts})
+		cands = append(cands, matchCandidate{Title: title, URL: hm[1], Time: tm[1], Timestamp: ts})
 	}
 	return cands
 }
 
 func extractM3U8(html string) string {
-	re := regexp.MustCompile(`(?i)src=["']\s*([^"']+\.m3u8[^"']*)\s*["']`)
+	re := regexp.MustCompile(`src:\s*["']([^"']+\.m3u8[^"']*)["']`)
 	m := re.FindStringSubmatch(html)
 	if len(m) != 2 {
 		return ""
 	}
-	return strings.TrimSpace(m[1])
+	return m[1]
 }
 
 func normalizeStreamURL(raw string) string {
